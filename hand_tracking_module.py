@@ -53,18 +53,32 @@ class HandDetector:
         return img
 
     def find_position(self, image, hand_number: int = 0, draw: bool = True):
-        landmark_list = []
+        x_list = []
+        y_list = []
+        bounding_box = []
+        self.landmarks = []
+
         if self.results.multi_hand_landmarks:  # type: ignore
             # type: ignore
             my_hand = self.results.multi_hand_landmarks[hand_number]  # type: ignore # noqa E501
             for id, lm in enumerate(my_hand.landmark):
                 height, width, channels = image.shape
                 cx, cy = int(lm.x * width), int(lm.y * height)
-                landmark_list.append([id, cx, cy])
+                x_list.append(cx)
+                y_list.append(cy)
+                self.landmarks.append([id, cx, cy])
                 if draw:
                     cv.circle(image, (cx, cy), 7, (255, 0, 0), cv.FILLED)
-        self.landmarks = landmark_list
-        return landmark_list
+
+            x_min, x_max = min(x_list), max(x_list)
+            y_min, y_max = min(y_list), max(y_list)
+            bounding_box = x_min, y_min, x_max, y_max
+
+            if draw:
+                cv.rectangle(
+                    image, (x_min - 20, y_min - 20), (x_max + 20, y_max + 20), (0, 255, 0), 2
+                )
+        return self.landmarks, bounding_box
 
     def fingers_up(self):
         # Thumb is ignored
